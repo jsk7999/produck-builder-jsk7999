@@ -1,0 +1,6 @@
+{
+  "name": "한식 조리법",
+  "description": "김치찌개를 비롯한 한국 전통 요리법을 소개하며, 동적 서빙 사이즈 조절, 단계별 요리 모드, 타이머 및 한식 AI 셰프 어시스턴트를 제공하는 한식 조리법 웹 서비스입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
