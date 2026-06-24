@@ -42,30 +42,45 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       parts: [{ text: message }],
     });
 
-    // Make direct API call to Gemini using native fetch for the edge runtime
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // Make direct API call to Gemini using native fetch for the edge runtime with robust fallbacks
+    const modelsToTry = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-2.5-flash"];
+    let apiResponse: Response | null = null;
+    let lastErrorMsg = "";
 
-    const apiResponse = await fetch(geminiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: {
-          parts: [{ text: systemInstruction }]
-        },
-        generationConfig: {
-          temperature: 0.7,
+    for (const modelName of modelsToTry) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const res = await fetch(geminiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents,
+            systemInstruction: {
+              parts: [{ text: systemInstruction }]
+            },
+            generationConfig: {
+              temperature: 0.7,
+            }
+          }),
+        });
+
+        if (res.ok) {
+          apiResponse = res;
+          break;
+        } else {
+          lastErrorMsg = await res.text();
         }
-      }),
-    });
+      } catch (err: any) {
+        lastErrorMsg = err.message || String(err);
+      }
+    }
 
-    if (!apiResponse.ok) {
-      const errorText = await apiResponse.text();
+    if (!apiResponse) {
       return new Response(
-        JSON.stringify({ error: `Gemini API 호출 실패: ${errorText}` }),
-        { status: apiResponse.status, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ error: `Gemini API 호출 실패 (모든 모델 시도 완료): ${lastErrorMsg}` }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
       );
     }
 
