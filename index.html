@@ -3,7 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <title>온정 한식 조리법 - 스마트 쿡가이드</title>
+    <script>
+      // Global error tracker to help user debug blank screen issues
+      window.addEventListener('error', function(event) {
+        showErrorOverlay('Runtime Error', event.error ? event.error.message + '\\n' + event.error.stack : event.message);
+      });
+      window.addEventListener('unhandledrejection', function(event) {
+        showErrorOverlay('Promise Rejection', event.reason ? event.reason.message + '\\n' + event.reason.stack : event.reason);
+      });
+
+      function showErrorOverlay(type, message) {
+        // Prevent multiple overlays
+        if (document.getElementById('debug-error-overlay')) return;
+        
+        const overlay = document.createElement('div');
+        overlay.id = 'debug-error-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.backgroundColor = '#1F1914';
+        overlay.style.color = '#F3ECE4';
+        overlay.style.padding = '24px';
+        overlay.style.fontFamily = 'monospace';
+        overlay.style.zIndex = '99999';
+        overlay.style.overflow = 'auto';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.gap = '16px';
+
+        overlay.innerHTML = `
+          <div style="border-bottom: 2px solid #9E2A2B; padding-bottom: 12px;">
+            <h1 style="color: #9E2A2B; margin: 0; font-size: 20px;">⚠️ 브라우저 실행 오류 감지 (${type})</h1>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #A89F95;">웹사이트 로딩 중 오류가 발생하여 화면이 표시되지 않습니다.</p>
+          </div>
+          <div style="background-color: #2C231B; padding: 16px; border-radius: 8px; border: 1px solid #443629; overflow-x: auto;">
+            <pre style="margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 1.5; color: #F59E0B;">${message || '상세 에러 내용 없음'}</pre>
+          </div>
+          <div style="font-size: 13px; line-height: 1.6; color: #A89F95;">
+            <strong style="color: #F3ECE4;">💡 해결 방법 제안:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+              <li>브라우저 강력 새로고침(Ctrl + Shift + R 또는 Cmd + Shift + R)을 시도해 보세요.</li>
+              <li>Cloudflare Pages 대시보드에서 최신 빌드가 성공적으로 완료되었는지 확인해 주세요.</li>
+              <li>빌드 설정 중 출력 디렉토리가 <strong>dist</strong>로 올바르게 설정되었는지 확인해 주세요.</li>
+            </ul>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+      }
+
+      // Check after 3.5 seconds if #root is still completely empty (meaning React didn't mount)
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const root = document.getElementById('root');
+          if (root && root.innerHTML.trim() === '' && !document.getElementById('debug-error-overlay')) {
+            showErrorOverlay('React Mount Failed', 'React가 root 엘리먼트에 마운트되지 않았습니다. 번들 파일이 실행되지 않았거나, 내부 파일 로딩 오류(404)가 발생했을 수 있습니다.\\n\\n브라우저 개발자 도구(F12) -> Console 탭에서 더 자세한 오류 로그를 확인하실 수 있습니다.');
+          }
+        }, 3500);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
