@@ -21,6 +21,8 @@ import {
   BookOpen,
   MessageSquare,
   Send,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { recipesData } from "./recipesData";
 import { Recipe, Ingredient } from "./types";
@@ -33,6 +35,30 @@ interface ChatMessage {
 }
 
 export default function App() {
+  // Theme state: light or dark
+  const [theme, setTheme] = useState<"light" | "dark" | string>(() => {
+    try {
+      const saved = localStorage.getItem("theme");
+      return saved || "light";
+    } catch {
+      return "light";
+    }
+  });
+
+  // Apply theme class to HTML root (for any global CSS styles if needed)
+  useEffect(() => {
+    try {
+      localStorage.setItem("theme", theme);
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch (e) {
+      console.warn("localStorage is not available.", e);
+    }
+  }, [theme]);
+
   // Recipes state
   const [recipes] = useState<Recipe[]>(recipesData);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>("kimchi-jjigae");
@@ -314,35 +340,50 @@ export default function App() {
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
       if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={index} className="font-semibold text-rose-950">{part.slice(2, -2)}</strong>;
+        return <strong key={index} className={`font-semibold ${theme === "dark" ? "text-[#E6B345]" : "text-rose-950"}`}>{part.slice(2, -2)}</strong>;
       }
       return part;
     });
   };
 
   return (
-    <div className="min-h-screen bg-[#FBF9F6] text-[#2C2621] font-sans flex flex-col antialiased">
+    <div className={`min-h-screen ${theme === "dark" ? "bg-[#14100D] text-[#E5DDD3]" : "bg-[#FBF9F6] text-[#2C2621]"} font-sans flex flex-col antialiased transition-colors duration-300`}>
       {/* Elegantly Polished Top Nav Bar */}
-      <header className="border-b border-[#E8DFD3] bg-[#FAF5EE] sticky top-0 z-10 px-4 py-3.5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <header className={`border-b ${theme === "dark" ? "border-[#2D231E] bg-[#1C1613]" : "border-[#E8DFD3] bg-[#FAF5EE]"} sticky top-0 z-10 px-4 py-3.5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors duration-300`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#9E2A2B] flex items-center justify-center text-white shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-[#9E2A2B] flex items-center justify-center text-white shadow-sm shrink-0">
             <ChefHat className="w-5.5 h-5.5" />
           </div>
           <div>
-            <h1 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#3A1415]">
-              한식 조리법 <span className="font-sans font-normal text-sm text-[#7D6C5E] ml-1.5 sm:inline block">정성과 전통을 담은 밥상</span>
+            <h1 className={`font-serif text-xl sm:text-2xl font-bold tracking-tight ${theme === "dark" ? "text-[#E6D4BE]" : "text-[#3A1415]"}`}>
+              온정 <span className="font-serif font-bold text-lg text-[#9E2A2B]">한식 조리법</span> <span className={`font-sans font-normal text-xs sm:text-sm ml-1.5 sm:inline block ${theme === "dark" ? "text-[#A39284]" : "text-[#7D6C5E]"}`}>정성과 전통을 담은 밥상</span>
             </h1>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className={`p-2.5 rounded-full transition-all duration-300 border cursor-pointer ${
+              theme === "dark"
+                ? "bg-[#251E1A] text-amber-400 border-[#3D3028] hover:bg-[#2C231E]"
+                : "bg-white text-[#5C4D41] border-[#E0D5C6] hover:bg-[#FAF6F0]"
+            }`}
+            aria-label="화면 모드 전환"
+          >
+            {theme === "dark" ? <Sun className="w-4.5 h-4.5 animate-pulse" /> : <Moon className="w-4.5 h-4.5" />}
+          </button>
+
           {/* AI Helper Toggle Button */}
           <button
             onClick={() => setChatOpen(!chatOpen)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium shadow-xs transition-all duration-300 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium shadow-xs transition-all duration-300 cursor-pointer ${
               chatOpen
                 ? "bg-[#9E2A2B] text-white hover:bg-[#852324]"
-                : "bg-white text-[#5C4D41] border border-[#E0D5C6] hover:bg-[#FAF6F0]"
+                : theme === "dark"
+                  ? "bg-[#1E1815] text-[#A69586] border border-[#3D3028] hover:bg-[#28201B]"
+                  : "bg-white text-[#5C4D41] border border-[#E0D5C6] hover:bg-[#FAF6F0]"
             }`}
           >
             <Sparkles className={`w-4 h-4 ${chatOpen ? "animate-pulse" : "text-[#9E2A2B]"}`} />
@@ -355,8 +396,12 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Side: Recipe Explorer Panel (col-span-4) */}
         <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="bg-white border border-[#E8DFD3] rounded-2xl p-5 shadow-xs">
-            <h2 className="font-serif text-lg font-bold text-[#422213] mb-4 flex items-center gap-2">
+          <div className={`border rounded-2xl p-5 shadow-xs transition-colors duration-300 ${
+            theme === "dark" ? "bg-[#1E1815] border-[#2D231E]" : "bg-white border-[#E8DFD3]"
+          }`}>
+            <h2 className={`font-serif text-lg font-bold mb-4 flex items-center gap-2 transition-colors ${
+              theme === "dark" ? "text-[#E6D4BE]" : "text-[#422213]"
+            }`}>
               <BookOpen className="w-4.5 h-4.5 text-[#9E2A2B]" />
               요리 책방
             </h2>
@@ -369,12 +414,16 @@ export default function App() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="조리법 이름이나 태그 검색..."
-                className="w-full bg-[#FAF7F2] border border-[#E2D6C5] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-[#9E2A2B]/20 focus:border-[#9E2A2B] transition-colors"
+                className={`w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-[#9E2A2B]/20 focus:border-[#9E2A2B] transition-all duration-300 ${
+                  theme === "dark"
+                    ? "bg-[#28201B] border-[#3D3028] text-[#E8E2D9]"
+                    : "bg-[#FAF7F2] border-[#E2D6C5] text-[#2C2621]"
+                }`}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8C7A6B] hover:text-black"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8C7A6B] hover:text-rose-500 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -387,10 +436,12 @@ export default function App() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-300 cursor-pointer ${
                     selectedCategory === cat
-                      ? "bg-[#9E2A2B] text-white"
-                      : "bg-[#FAF7F2] text-[#6E5D4F] border border-[#EAE1D4] hover:bg-[#F5EDE0]"
+                      ? "bg-[#9E2A2B] text-white shadow-xs"
+                      : theme === "dark"
+                        ? "bg-[#28201B] text-[#A69586] border border-[#3D3028] hover:bg-[#342923] hover:text-[#E8E2D9]"
+                        : "bg-[#FAF7F2] text-[#6E5D4F] border border-[#EAE1D4] hover:bg-[#F5EDE0] hover:text-[#422213]"
                   }`}
                 >
                   {cat}
@@ -413,43 +464,61 @@ export default function App() {
                     onClick={() => setSelectedRecipeId(recipe.id)}
                     className={`group cursor-pointer rounded-2xl p-4.5 transition-all border ${
                       isActive
-                        ? "bg-[#FAF5EE] border-[#CBB89D] shadow-sm ring-1 ring-[#CBB89D]/40"
-                        : "bg-white border-[#E8DFD3] shadow-xs hover:shadow-sm hover:border-[#D0C2AE]"
+                        ? theme === "dark"
+                          ? "bg-[#251E1A] border-[#9E2A2B] shadow-sm ring-1 ring-[#9E2A2B]/40"
+                          : "bg-[#FAF5EE] border-[#CBB89D] shadow-sm ring-1 ring-[#CBB89D]/40"
+                        : theme === "dark"
+                          ? "bg-[#1E1815] border-[#251C18] shadow-xs hover:shadow-sm hover:border-[#3E2E25]"
+                          : "bg-white border-[#E8DFD3] shadow-xs hover:shadow-sm hover:border-[#D0C2AE]"
                     }`}
                   >
                     <div className="flex justify-between items-start gap-2 mb-1.5">
                       <div>
-                        <span className="text-[11px] font-medium tracking-wide text-[#9E2A2B] uppercase bg-[#9E2A2B]/10 px-2 py-0.5 rounded-sm">
+                        <span className={`text-[11px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-sm ${
+                          theme === "dark" ? "bg-[#B33435]/15 text-[#E25C5E]" : "bg-[#9E2A2B]/10 text-[#9E2A2B]"
+                        }`}>
                           {recipe.category}
                         </span>
-                        <h3 className="font-serif text-lg font-bold text-[#3E2715] mt-1 group-hover:text-[#9E2A2B] transition-colors">
+                        <h3 className={`font-serif text-lg font-bold mt-1 group-hover:text-[#9E2A2B] transition-colors ${
+                          theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2715]"
+                        }`}>
                           {recipe.name}
                         </h3>
-                        <p className="text-[11px] text-[#8C7A6B] font-mono tracking-wide">
+                        <p className={`text-[11px] font-mono tracking-wide ${
+                          theme === "dark" ? "text-[#9E8E81]" : "text-[#8C7A6B]"
+                        }`}>
                           {recipe.engName}
                         </p>
                       </div>
 
-                      <div className="flex flex-col items-end gap-1">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             recipe.difficulty === "쉬움"
-                              ? "bg-emerald-100 text-emerald-800"
+                              ? theme === "dark"
+                                ? "bg-emerald-950/40 text-emerald-300 border border-emerald-800/30"
+                                : "bg-emerald-100 text-emerald-800"
                               : recipe.difficulty === "보통"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-rose-100 text-rose-800"
+                                ? theme === "dark"
+                                  ? "bg-amber-950/40 text-amber-300 border border-amber-800/30"
+                                  : "bg-amber-100 text-amber-800"
+                                : theme === "dark"
+                                  ? "bg-rose-950/40 text-rose-300 border border-rose-800/30"
+                                  : "bg-rose-100 text-rose-800"
                           }`}
                         >
                           난이도 {recipe.difficulty}
                         </span>
-                        <div className="flex items-center gap-1 text-[11px] text-[#8C7A6B]">
+                        <div className={`flex items-center gap-1 text-[11px] ${theme === "dark" ? "text-[#9E8E81]" : "text-[#8C7A6B]"}`}>
                           <Timer className="w-3.5 h-3.5" />
                           <span>{recipe.prepTimeMin + recipe.cookTimeMin}분</span>
                         </div>
                       </div>
                     </div>
 
-                    <p className="text-xs text-[#6B5A4B] line-clamp-2 leading-relaxed mb-3">
+                    <p className={`text-xs line-clamp-2 leading-relaxed mb-3 ${
+                      theme === "dark" ? "text-[#9E8E80]" : "text-[#6B5A4B]"
+                    }`}>
                       {recipe.description}
                     </p>
 
@@ -457,13 +526,19 @@ export default function App() {
                       {recipe.tags.slice(0, 3).map((tag) => (
                         <span
                           key={tag}
-                          className="text-[10px] bg-[#F2EDE4] text-[#5C4B3E] px-2 py-0.5 rounded-md"
+                          className={`text-[10px] px-2 py-0.5 rounded-md ${
+                            theme === "dark" ? "bg-[#28201B] text-[#A69586]" : "bg-[#F2EDE4] text-[#5C4B3E]"
+                          }`}
                         >
                           #{tag}
                         </span>
                       ))}
                       {isKimchi && (
-                        <span className="text-[10px] bg-[#9E2A2B]/10 text-[#9E2A2B] font-medium px-2 py-0.5 rounded-md border border-[#9E2A2B]/20">
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-md border ${
+                          theme === "dark"
+                            ? "bg-[#B33435]/15 text-[#E25C5E] border-[#B33435]/30"
+                            : "bg-[#9E2A2B]/10 text-[#9E2A2B] border border-[#9E2A2B]/20"
+                        }`}>
                           ✨ 3가지 버젼 가능
                         </span>
                       )}
@@ -472,15 +547,17 @@ export default function App() {
                 );
               })
             ) : (
-              <div className="text-center py-12 bg-white border border-[#E8DFD3] rounded-2xl">
+              <div className={`text-center py-12 border rounded-2xl transition-all duration-300 ${
+                theme === "dark" ? "bg-[#1E1815] border-[#2D231E]" : "bg-white border-[#E8DFD3]"
+              }`}>
                 <ChefHat className="w-10 h-10 text-[#C4B4A2] mx-auto mb-3" />
-                <p className="text-[#8C7A6B] text-sm">조건에 맞는 조리법이 없습니다.</p>
+                <p className={`text-sm ${theme === "dark" ? "text-[#9E8E81]" : "text-[#8C7A6B]"}`}>조건에 맞는 조리법이 없습니다.</p>
                 <button
                   onClick={() => {
                     setSearchQuery("");
                     setSelectedCategory("전체");
                   }}
-                  className="text-[#9E2A2B] hover:underline text-xs mt-1.5 font-medium"
+                  className="text-[#9E2A2B] hover:underline text-xs mt-1.5 font-medium cursor-pointer"
                 >
                   필터 초기화하기
                 </button>
@@ -498,10 +575,14 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.3 }}
-              className="bg-white border border-[#E8DFD3] rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-6"
+              className={`border rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-6 transition-colors duration-300 ${
+                theme === "dark" ? "bg-[#1E1815] border-[#2D231E]" : "bg-white border-[#E8DFD3]"
+              }`}
             >
               {/* Recipe Meta Banner */}
-              <div className="border-b border-[#F0EAE1] pb-6">
+              <div className={`border-b pb-6 transition-colors duration-300 ${
+                theme === "dark" ? "border-[#2D231E]" : "border-[#F0EAE1]"
+              }`}>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-xs font-semibold bg-[#9E2A2B] text-white px-3 py-1 rounded-full">
                     {activeRecipe.category}
@@ -509,7 +590,11 @@ export default function App() {
                   {activeRecipe.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-xs text-[#7A6451] bg-[#FAF6F0] px-2.5 py-0.5 rounded-full border border-[#EDE4D8]"
+                      className={`text-xs px-2.5 py-0.5 rounded-full border transition-all duration-300 ${
+                        theme === "dark"
+                          ? "text-[#A89687] bg-[#28201B] border-[#3D3028]"
+                          : "text-[#7A6451] bg-[#FAF6F0] border border-[#EDE4D8]"
+                      }`}
                     >
                       #{tag}
                     </span>
@@ -518,39 +603,55 @@ export default function App() {
 
                 <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mt-3">
                   <div>
-                    <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#33180D] tracking-tight">
+                    <h2 className={`font-serif text-3xl sm:text-4xl font-bold tracking-tight transition-colors ${
+                      theme === "dark" ? "text-[#EBDDCB]" : "text-[#33180D]"
+                    }`}>
                       {activeRecipe.name}
                     </h2>
-                    <p className="font-mono text-sm tracking-wide text-[#7A6451] mt-1 uppercase">
+                    <p className={`font-mono text-sm tracking-wide mt-1 uppercase transition-colors ${
+                      theme === "dark" ? "text-[#9E8E81]" : "text-[#7A6451]"
+                    }`}>
                       {activeRecipe.engName}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-4 text-sm mt-3 sm:mt-0">
-                    <div className="flex flex-col items-center px-4 py-2 bg-[#FAF6F0] border border-[#EADFCF] rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] text-[#8C7A6B] font-medium uppercase">난이도</span>
-                      <span className="font-bold text-sm text-[#3E2312]">{activeRecipe.difficulty}</span>
+                    <div className={`flex flex-col items-center px-4 py-2 border rounded-xl text-center min-w-[70px] transition-all duration-300 ${
+                      theme === "dark" ? "bg-[#28201B] border-[#3D3028]" : "bg-[#FAF6F0] border border-[#EADFCF]"
+                    }`}>
+                      <span className={`text-[10px] font-medium uppercase ${theme === "dark" ? "text-[#A69586]" : "text-[#8C7A6B]"}`}>난이도</span>
+                      <span className={`font-bold text-sm ${theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2312]"}`}>{activeRecipe.difficulty}</span>
                     </div>
-                    <div className="flex flex-col items-center px-4 py-2 bg-[#FAF6F0] border border-[#EADFCF] rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] text-[#8C7A6B] font-medium uppercase">준비시간</span>
-                      <span className="font-bold text-sm text-[#3E2312]">{activeRecipe.prepTimeMin}분</span>
+                    <div className={`flex flex-col items-center px-4 py-2 border rounded-xl text-center min-w-[70px] transition-all duration-300 ${
+                      theme === "dark" ? "bg-[#28201B] border-[#3D3028]" : "bg-[#FAF6F0] border border-[#EADFCF]"
+                    }`}>
+                      <span className={`text-[10px] font-medium uppercase ${theme === "dark" ? "text-[#A69586]" : "text-[#8C7A6B]"}`}>준비시간</span>
+                      <span className={`font-bold text-sm ${theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2312]"}`}>{activeRecipe.prepTimeMin}분</span>
                     </div>
-                    <div className="flex flex-col items-center px-4 py-2 bg-[#FAF6F0] border border-[#EADFCF] rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] text-[#8C7A6B] font-medium uppercase">조리시간</span>
-                      <span className="font-bold text-sm text-[#3E2312]">{activeRecipe.cookTimeMin}분</span>
+                    <div className={`flex flex-col items-center px-4 py-2 border rounded-xl text-center min-w-[70px] transition-all duration-300 ${
+                      theme === "dark" ? "bg-[#28201B] border-[#3D3028]" : "bg-[#FAF6F0] border border-[#EADFCF]"
+                    }`}>
+                      <span className={`text-[10px] font-medium uppercase ${theme === "dark" ? "text-[#A69586]" : "text-[#8C7A6B]"}`}>조리시간</span>
+                      <span className={`font-bold text-sm ${theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2312]"}`}>{activeRecipe.cookTimeMin}분</span>
                     </div>
                   </div>
                 </div>
 
-                <p className="text-sm sm:text-base text-[#57473A] leading-relaxed mt-4 font-serif">
+                <p className={`text-sm sm:text-base leading-relaxed mt-4 font-serif transition-colors ${
+                  theme === "dark" ? "text-[#CBBCA9]" : "text-[#57473A]"
+                }`}>
                   {activeRecipe.description}
                 </p>
               </div>
 
               {/* Dynamic Interactive Variation Selectors (specifically for Kimchi Jjigae) */}
               {activeRecipe.id === "kimchi-jjigae" && activeRecipe.variations && (
-                <div className="bg-[#FAF7F2] border border-[#EBDCC5] rounded-2xl p-4">
-                  <h4 className="text-xs font-bold text-[#6B4E38] tracking-wider uppercase mb-3 flex items-center gap-1.5">
+                <div className={`border rounded-2xl p-4 transition-all duration-300 ${
+                  theme === "dark" ? "bg-[#28201B] border-[#3D3028]" : "bg-[#FAF7F2] border border-[#EBDCC5]"
+                }`}>
+                  <h4 className={`text-xs font-bold tracking-wider uppercase mb-3 flex items-center gap-1.5 transition-colors ${
+                    theme === "dark" ? "text-[#CBBCA9]" : "text-[#6B4E38]"
+                  }`}>
                     <Flame className="w-4 h-4 text-[#9E2A2B]" />
                     조리 버젼 선택 (Variations)
                   </h4>
@@ -562,20 +663,28 @@ export default function App() {
                           setSelectedVariationId(v.id);
                           setPreparedIngredients({});
                         }}
-                        className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                        className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
                           selectedVariationId === v.id
-                            ? "bg-white border-[#9E2A2B] shadow-xs ring-1 ring-[#9E2A2B]/40"
-                            : "bg-[#FDFCF9] border-[#E8DCCB] hover:border-[#D5C4AD] hover:bg-white"
+                            ? theme === "dark"
+                              ? "bg-[#251E1A] border-[#9E2A2B] shadow-xs ring-1 ring-[#9E2A2B]/40"
+                              : "bg-white border-[#9E2A2B] shadow-xs ring-1 ring-[#9E2A2B]/40"
+                            : theme === "dark"
+                              ? "bg-[#1C1613] border-[#3D3028] hover:border-[#4E3E34] hover:bg-[#251E1A]"
+                              : "bg-[#FDFCF9] border-[#E8DCCB] hover:border-[#D5C4AD] hover:bg-white"
                         }`}
                       >
                         <div>
-                          <h5 className="font-serif text-sm font-bold text-[#3E2312] flex items-center gap-1.5">
+                          <h5 className={`font-serif text-sm font-bold flex items-center gap-1.5 ${
+                            theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2312]"
+                          }`}>
                             {selectedVariationId === v.id && (
                               <div className="w-1.5 h-1.5 rounded-full bg-[#9E2A2B]" />
                             )}
                             {v.name}
                           </h5>
-                          <p className="text-[11px] text-[#7A6451] leading-relaxed mt-1">
+                          <p className={`text-[11px] leading-relaxed mt-1 ${
+                            theme === "dark" ? "text-[#9E8E81]" : "text-[#7A6451]"
+                          }`}>
                             {v.description}
                           </p>
                         </div>
@@ -586,29 +695,37 @@ export default function App() {
               )}
 
               {/* Dynamic Portions Calculator */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#F7F2EB] px-5 py-4 rounded-2xl border border-[#E3D6C5]">
+              <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 rounded-2xl border transition-all duration-300 ${
+                theme === "dark" ? "bg-[#28201B] border-[#3D3028]" : "bg-[#F7F2EB] border-[#E3D6C5]"
+              }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#9E2A2B]/10 flex items-center justify-center text-[#9E2A2B]">
+                  <div className="w-9 h-9 rounded-full bg-[#9E2A2B]/10 flex items-center justify-center text-[#9E2A2B] shrink-0">
                     <Users className="w-4.5 h-4.5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-[#3E2312]">기준 인원 조절</h4>
-                    <p className="text-xs text-[#7A6451]">인원수 증감 시 필요한 재료의 무게가 자동 조절됩니다.</p>
+                    <h4 className={`text-sm font-bold ${theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2312]"}`}>기준 인원 조절</h4>
+                    <p className={`text-xs ${theme === "dark" ? "text-[#9E8E81]" : "text-[#7A6451]"}`}>인원수 증감 시 필요한 재료의 무게가 자동 조절됩니다.</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 bg-white border border-[#DDD0C0] rounded-xl px-2 py-1 shadow-2xs self-start sm:self-center">
+                <div className={`flex items-center gap-1 border rounded-xl px-2 py-1 shadow-2xs self-start sm:self-center transition-colors duration-300 ${
+                  theme === "dark" ? "bg-[#1E1815] border-[#3D3028]" : "bg-white border-[#DDD0C0]"
+                }`}>
                   <button
                     disabled={currentServings <= 1}
                     onClick={() => {
                       setCurrentServings(currentServings - 1);
                       setPreparedIngredients({});
                     }}
-                    className="w-8 h-8 rounded-lg text-lg font-bold flex items-center justify-center hover:bg-[#FAF6F0] disabled:opacity-35 transition-colors"
+                    className={`w-8 h-8 rounded-lg text-lg font-bold flex items-center justify-center transition-colors disabled:opacity-35 cursor-pointer ${
+                      theme === "dark" ? "hover:bg-[#28201B] text-white" : "hover:bg-[#FAF6F0]"
+                    }`}
                   >
                     -
                   </button>
-                  <span className="font-mono text-base font-bold text-center px-4 min-w-[40px]">
+                  <span className={`font-mono text-base font-bold text-center px-4 min-w-[40px] ${
+                    theme === "dark" ? "text-white" : ""
+                  }`}>
                     {currentServings}인분
                   </span>
                   <button
@@ -617,7 +734,9 @@ export default function App() {
                       setCurrentServings(currentServings + 1);
                       setPreparedIngredients({});
                     }}
-                    className="w-8 h-8 rounded-lg text-lg font-bold flex items-center justify-center hover:bg-[#FAF6F0] disabled:opacity-35 transition-colors"
+                    className={`w-8 h-8 rounded-lg text-lg font-bold flex items-center justify-center transition-colors disabled:opacity-35 cursor-pointer ${
+                      theme === "dark" ? "hover:bg-[#28201B] text-white" : "hover:bg-[#FAF6F0]"
+                    }`}
                   >
                     +
                   </button>
@@ -625,22 +744,30 @@ export default function App() {
               </div>
 
               {/* Ingredients Panels split into categories with preparational checklist */}
-              <div className="bg-[#FCFAF7] border border-[#E8DFD3] rounded-2xl p-5 sm:p-6">
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4.5 border-b border-[#F0EAE1] pb-3">
+              <div className={`border rounded-2xl p-5 sm:p-6 transition-colors duration-300 ${
+                theme === "dark" ? "bg-[#1E1714] border-[#2D231E]" : "bg-[#FCFAF7] border-[#E8DFD3]"
+              }`}>
+                <div className={`flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4.5 border-b pb-3 transition-colors duration-300 ${
+                  theme === "dark" ? "border-[#2D231E]" : "border-[#F0EAE1]"
+                }`}>
                   <div>
-                    <h3 className="font-serif text-lg font-bold text-[#3E2312] flex items-center gap-2">
+                    <h3 className={`font-serif text-lg font-bold flex items-center gap-2 transition-colors ${
+                      theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2312]"
+                    }`}>
                       <Utensils className="w-4.5 h-4.5 text-[#9E2A2B]" />
                       재료 준비하기
                     </h3>
-                    <p className="text-xs text-[#8C7A6B] mt-0.5">준비된 재료를 선택하여 사전 정리를 체크해보세요.</p>
+                    <p className={`text-xs mt-0.5 ${theme === "dark" ? "text-[#9E8E81]" : "text-[#8C7A6B]"}`}>준비된 재료를 선택하여 사전 정리를 체크해보세요.</p>
                   </div>
 
                   {/* Progress Tracker Bar */}
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-[#8C7A6B]">
+                    <span className={`text-xs font-semibold ${theme === "dark" ? "text-[#9E8E81]" : "text-[#8C7A6B]"}`}>
                       준비도: {preparedCount}/{totalIngredientsCount} ({prepPercentage}%)
                     </span>
-                    <div className="w-24 sm:w-32 bg-[#EADECB] h-2 rounded-full overflow-hidden">
+                    <div className={`w-24 sm:w-32 h-2 rounded-full overflow-hidden transition-all duration-300 ${
+                      theme === "dark" ? "bg-[#3D3028]" : "bg-[#EADECB]"
+                    }`}>
                       <motion.div
                         className="bg-[#9E2A2B] h-full"
                         animate={{ width: `${prepPercentage}%` }}
@@ -657,7 +784,9 @@ export default function App() {
 
                     return (
                       <div key={cat} className="flex flex-col gap-2">
-                        <h4 className="text-xs font-extrabold text-[#7A6451] tracking-wider uppercase border-l-2 border-[#9E2A2B] pl-2 mb-1.5">
+                        <h4 className={`text-xs font-extrabold tracking-wider uppercase border-l-2 border-[#9E2A2B] pl-2 mb-1.5 ${
+                          theme === "dark" ? "text-[#CBBCA9]" : "text-[#7A6451]"
+                        }`}>
                           {cat}
                         </h4>
                         <div className="flex flex-col gap-1.5">
@@ -669,8 +798,12 @@ export default function App() {
                                 onClick={() => togglePrepared(ing.name)}
                                 className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
                                   isChecked
-                                    ? "bg-[#FAF5EE] text-[#8C7A6B] line-through decoration-[#B8A290]"
-                                    : "hover:bg-[#FAF6F0]"
+                                    ? theme === "dark"
+                                      ? "bg-[#28201B] text-[#9E8E81] line-through decoration-[#4E3D32]"
+                                      : "bg-[#FAF5EE] text-[#8C7A6B] line-through decoration-[#B8A290]"
+                                    : theme === "dark"
+                                      ? "hover:bg-[#251E1A] text-[#E5DDD3]"
+                                      : "hover:bg-[#FAF6F0] text-[#2C2621]"
                                 }`}
                               >
                                 <div className="flex items-center gap-2.5">
@@ -678,7 +811,9 @@ export default function App() {
                                     className={`w-4.5 h-4.5 rounded-md flex items-center justify-center transition-all border ${
                                       isChecked
                                         ? "bg-[#9E2A2B] border-[#9E2A2B] text-white"
-                                        : "border-[#CBBCA9] bg-white group-hover:border-[#9E2A2B]"
+                                        : theme === "dark"
+                                          ? "border-[#4A3B31] bg-[#1C1613] group-hover:border-[#9E2A2B]"
+                                          : "border-[#CBBCA9] bg-white group-hover:border-[#9E2A2B]"
                                     }`}
                                   >
                                     {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
@@ -686,7 +821,9 @@ export default function App() {
                                   <span className="text-sm font-medium">{ing.name}</span>
                                 </div>
 
-                                <span className="text-sm font-mono text-[#5C4D41] bg-[#FAF5EE]/40 px-2 py-0.5 rounded-sm">
+                                <span className={`text-sm font-mono px-2 py-0.5 rounded-sm ${
+                                  theme === "dark" ? "bg-[#2D231E]/60 text-[#CBBCA9]" : "bg-[#FAF5EE]/40 text-[#5C4D41]"
+                                }`}>
                                   {formatAmount(ing.baseAmount, activeRecipe.baseServings, currentServings)}
                                   {ing.unit}
                                 </span>
@@ -701,16 +838,22 @@ export default function App() {
               </div>
 
               {/* Cook Mode Trigger Panel */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-amber-50/20 border border-[#9E2A2B]/15 rounded-2xl p-5">
+              <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 border rounded-2xl p-5 transition-all duration-300 ${
+                theme === "dark" ? "bg-[#28201B] border-[#3D3028]" : "bg-amber-50/20 border-[#9E2A2B]/15"
+              }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#9E2A2B] text-white flex items-center justify-center shadow-xs">
+                  <div className="w-10 h-10 rounded-full bg-[#9E2A2B] text-white flex items-center justify-center shadow-xs shrink-0">
                     <Flame className="w-5 h-5 animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="font-serif text-base font-bold text-[#3E2312]">
+                    <h3 className={`font-serif text-base font-bold transition-colors ${
+                      theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2312]"
+                    }`}>
                       스마트 요리 가이드 실행하기
                     </h3>
-                    <p className="text-xs text-[#7A6451] mt-0.5">
+                    <p className={`text-xs mt-0.5 transition-colors ${
+                      theme === "dark" ? "text-[#9E8E81]" : "text-[#7A6451]"
+                    }`}>
                       큰 폰트 크기, 단계별 시간 카운트다운 및 완성 알림 소리를 제공하는 주방 전용 모드입니다.
                     </p>
                   </div>
@@ -718,7 +861,7 @@ export default function App() {
 
                 <button
                   onClick={startCooking}
-                  className="w-full sm:w-auto bg-[#9E2A2B] hover:bg-[#852324] text-white font-medium text-sm px-6 py-3 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-[#9E2A2B] hover:bg-[#852324] text-white font-medium text-sm px-6 py-3 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
                 >
                   <Play className="w-4 h-4 fill-white text-white" />
                   요리 시작하기 (Cook Mode)
@@ -726,8 +869,12 @@ export default function App() {
               </div>
 
               {/* Collapsible Cooking Tips Section */}
-              <div className="border-t border-[#F0EAE1] pt-6">
-                <h3 className="font-serif text-lg font-bold text-[#3E2312] mb-3 flex items-center gap-2">
+              <div className={`border-t pt-6 transition-colors duration-300 ${
+                theme === "dark" ? "border-[#2D231E]" : "border-[#F0EAE1]"
+              }`}>
+                <h3 className={`font-serif text-lg font-bold mb-3 flex items-center gap-2 transition-colors ${
+                  theme === "dark" ? "text-[#EBDDCB]" : "text-[#3E2312]"
+                }`}>
                   <Info className="w-4.5 h-4.5 text-[#4F6D65]" />
                   셰프의 요리 비결 (Tips)
                 </h3>
@@ -735,7 +882,9 @@ export default function App() {
                   {activeRecipe.tips.map((tip, idx) => (
                     <li
                       key={idx}
-                      className="text-sm text-[#5C4D41] leading-relaxed bg-[#F7F9F8] border-l-3 border-[#4F6D65] p-3.5 rounded-r-xl"
+                      className={`text-sm leading-relaxed border-l-3 border-[#4F6D65] p-3.5 rounded-r-xl transition-all duration-300 ${
+                        theme === "dark" ? "text-[#CBBCA9] bg-[#221B18]" : "text-[#5C4D41] bg-[#F7F9F8]"
+                      }`}
                     >
                       {tip}
                     </li>
@@ -756,7 +905,9 @@ export default function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 30, scale: 0.95 }}
               transition={{ duration: 0.25 }}
-              className="bg-white border border-[#E2D6C5] rounded-2xl w-[350px] sm:w-[420px] max-w-[90vw] h-[520px] shadow-2xl flex flex-col mb-4 overflow-hidden"
+              className={`border rounded-2xl w-[350px] sm:w-[420px] max-w-[90vw] h-[520px] shadow-2xl flex flex-col mb-4 overflow-hidden transition-all duration-300 ${
+                theme === "dark" ? "bg-[#1E1815] border-[#2D231E]" : "bg-white border-[#E2D6C5]"
+              }`}
             >
               {/* Chat Header */}
               <div className="bg-[#9E2A2B] text-white px-4 py-4 flex items-center justify-between shadow-xs">
@@ -778,22 +929,30 @@ export default function App() {
               </div>
 
               {/* Messages Body */}
-              <div className="flex-1 overflow-y-auto p-4 bg-[#FBF9F6] flex flex-col gap-3.5">
+              <div className={`flex-1 overflow-y-auto p-4 flex flex-col gap-3.5 transition-colors duration-300 ${
+                theme === "dark" ? "bg-[#14100D]" : "bg-[#FBF9F6]"
+              }`}>
                 {chatMessages.map((msg) => (
                   <div
                     key={msg.id}
                     className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                   >
                     {msg.role === "chef" && (
-                      <div className="w-8 h-8 rounded-full bg-[#9E2A2B]/10 text-[#9E2A2B] flex items-center justify-center shrink-0 border border-[#9E2A2B]/20">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
+                        theme === "dark"
+                          ? "bg-[#B33435]/15 text-[#E25C5E] border-[#B33435]/20"
+                          : "bg-[#9E2A2B]/10 text-[#9E2A2B] border border-[#9E2A2B]/20"
+                      }`}>
                         <ChefHat className="w-4 h-4" />
                       </div>
                     )}
                     <div
                       className={`max-w-[78%] rounded-2xl p-3.5 text-sm leading-relaxed ${
                         msg.role === "user"
-                          ? "bg-[#9E2A2B] text-white rounded-tr-none"
-                          : "bg-white text-[#3E2D1F] border border-[#ECE0D0] rounded-tl-none shadow-2xs"
+                          ? "bg-[#9E2A2B] text-white rounded-tr-none shadow-xs"
+                          : theme === "dark"
+                            ? "bg-[#28201B] text-[#E5DDD3] border border-[#3D3028] rounded-tl-none shadow-2xs"
+                            : "bg-white text-[#3E2D1F] border border-[#ECE0D0] rounded-tl-none shadow-2xs"
                       }`}
                     >
                       {msg.role === "chef" ? (
@@ -803,7 +962,7 @@ export default function App() {
                       )}
                       <span
                         className={`text-[9px] block text-right mt-1.5 opacity-60 ${
-                          msg.role === "user" ? "text-rose-100" : "text-[#8C7A6B]"
+                          msg.role === "user" ? "text-rose-100" : theme === "dark" ? "text-[#9E8E81]" : "text-[#8C7A6B]"
                         }`}
                       >
                         {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -814,14 +973,20 @@ export default function App() {
 
                 {chatLoading && (
                   <div className="flex gap-2.5 flex-row">
-                    <div className="w-8 h-8 rounded-full bg-[#9E2A2B]/10 text-[#9E2A2B] flex items-center justify-center shrink-0">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
+                      theme === "dark"
+                        ? "bg-[#B33435]/15 text-[#E25C5E] border-[#B33435]/20"
+                        : "bg-[#9E2A2B]/10 text-[#9E2A2B] border border-[#9E2A2B]/20"
+                    }`}>
                       <ChefHat className="w-4 h-4 animate-bounce" />
                     </div>
-                    <div className="bg-white border border-[#ECE0D0] rounded-2xl rounded-tl-none p-3.5 text-sm shadow-2xs flex items-center gap-2">
+                    <div className={`rounded-2xl rounded-tl-none p-3.5 text-sm shadow-2xs flex items-center gap-2 border transition-colors ${
+                      theme === "dark" ? "bg-[#28201B] border-[#3D3028] text-[#E5DDD3]" : "bg-white border-[#ECE0D0] text-black"
+                    }`}>
                       <span className="w-2 h-2 rounded-full bg-[#9E2A2B] animate-bounce" />
                       <span className="w-2 h-2 rounded-full bg-[#9E2A2B] animate-bounce [animation-delay:0.2s]" />
                       <span className="w-2 h-2 rounded-full bg-[#9E2A2B] animate-bounce [animation-delay:0.4s]" />
-                      <span className="text-xs text-[#8C7A6B] ml-1">가장 알맞은 비결을 떠올리는 중...</span>
+                      <span className={`text-xs ml-1 ${theme === "dark" ? "text-[#9E8E81]" : "text-[#8C7A6B]"}`}>가장 알맞은 비결을 떠올리는 중...</span>
                     </div>
                   </div>
                 )}
@@ -829,7 +994,9 @@ export default function App() {
               </div>
 
               {/* Prebaked Quick Chips Questions */}
-              <div className="px-3 py-2 bg-[#FAF6F0] border-t border-[#EFE5D9] flex gap-1.5 overflow-x-auto scrollbar-none shrink-0">
+              <div className={`px-3 py-2 border-t flex gap-1.5 overflow-x-auto scrollbar-none shrink-0 transition-colors duration-300 ${
+                theme === "dark" ? "bg-[#221B18] border-[#3D3028]" : "bg-[#FAF6F0] border-[#EFE5D9]"
+              }`}>
                 {[
                   "김치찌개 신맛 없애는 법은?",
                   "스팸이나 돼지고기 대신 참치 넣는 순서?",
@@ -839,7 +1006,11 @@ export default function App() {
                   <button
                     key={q}
                     onClick={() => sendChatMessage(q)}
-                    className="text-[11px] bg-white border border-[#E5D7C6] text-[#6E5945] rounded-full px-3 py-1.5 whitespace-nowrap hover:border-[#9E2A2B] hover:bg-[#FAF5EE] transition-all cursor-pointer shrink-0"
+                    className={`text-[11px] border rounded-full px-3 py-1.5 whitespace-nowrap hover:border-[#9E2A2B] transition-all cursor-pointer shrink-0 ${
+                      theme === "dark"
+                        ? "bg-[#1E1815] border-[#3D3028] text-[#A69586] hover:bg-[#28201B]"
+                        : "bg-white border-[#E5D7C6] text-[#6E5945] hover:bg-[#FAF5EE]"
+                    }`}
                   >
                     {q}
                   </button>
@@ -852,14 +1023,20 @@ export default function App() {
                   e.preventDefault();
                   if (typeof chatInput === "string") sendChatMessage(chatInput);
                 }}
-                className="p-3 border-t border-[#EFE5D9] bg-white flex items-center gap-2 shrink-0"
+                className={`p-3 border-t flex items-center gap-2 shrink-0 transition-colors duration-300 ${
+                  theme === "dark" ? "bg-[#1E1815] border-[#3D3028]" : "bg-white border-[#EFE5D9]"
+                }`}
               >
                 <input
                   type="text"
                   value={typeof chatInput === "string" ? chatInput : ""}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="셰프에게 질문해 보세요 (예: 쌀뜨물 대신 생수는?)"
-                  className="flex-1 bg-[#FAF8F5] border border-[#DDD0C0] rounded-xl px-3.5 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-[#9E2A2B]/20 focus:border-[#9E2A2B]"
+                  className={`flex-1 rounded-xl px-3.5 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-[#9E2A2B]/20 focus:border-[#9E2A2B] transition-colors duration-300 ${
+                    theme === "dark"
+                      ? "bg-[#28201B] border-[#3D3028] text-[#E5DDD3] placeholder-[#8C7A6B]"
+                      : "bg-[#FAF8F5] border-[#DDD0C0] text-black"
+                  }`}
                 />
                 <button
                   type="submit"
