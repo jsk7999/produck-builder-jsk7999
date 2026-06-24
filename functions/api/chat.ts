@@ -2,7 +2,7 @@ interface Env {
   GEMINI_API_KEY: string;
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
+export const onRequestPost = async (context: { request: Request; env: Env }) => {
   try {
     const { request, env } = context;
     const apiKey = env.GEMINI_API_KEY;
